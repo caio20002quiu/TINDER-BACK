@@ -117,8 +117,9 @@ router.post('/swipe', auth, async (req, res) => {
       console.log('   Common interests:', commonInterests);
       console.log('   Has common interests?', commonInterests.length > 0 ? '✅ YES!' : '❌ NO');
       
-      // Match se houver like reverso E interesses em comum
-      const shouldMatch = likeReverso && commonInterests.length > 0;
+      // Match acontece quando ambos se curtem (like reverso)
+      // Interesses em comum são um bônus, mas não obrigatórios para o match
+      const shouldMatch = !!likeReverso;
       
       console.log('   Should match?', shouldMatch ? '✅ YES!' : '❌ NO');
       console.log('=================\n');
@@ -130,9 +131,14 @@ router.post('/swipe', auth, async (req, res) => {
         });
         await match.save();
         
+        // Mensagem varia se há interesses em comum
+        const matchMessage = commonInterests.length > 0 
+          ? '🎉 É um match! Vocês curtiram um ao outro e têm interesses em comum!'
+          : '🎉 É um match! Vocês curtiram um ao outro!';
+        
         return res.json({
           match: true,
-          message: '🎉 É um match! Vocês curtiram um ao outro e têm interesses em comum!',
+          message: matchMessage,
           matchedUser: targetUser.getPublicProfile(),
           commonInterests: commonInterests,
           totalCommonInterests: commonInterests.length
