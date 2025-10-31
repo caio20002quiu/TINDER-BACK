@@ -12,19 +12,51 @@ router.post('/swipe', auth, async (req, res) => {
   try {
     const { targetUserId, action } = req.body; // action: 'like', 'pass' ou 'superlike'
     
-    // Recarregar usuário atual para ter dados mais recentes
-    const currentUser = await User.findById(req.user._id);
-    if (!currentUser) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+    // Validar campos obrigatórios
+    if (!targetUserId) {
+      return res.status(400).json({ 
+        message: 'targetUserId é obrigatório',
+        error: 'missing_targetUserId'
+      });
+    }
+
+    if (!action) {
+      return res.status(400).json({ 
+        message: 'action é obrigatória',
+        error: 'missing_action'
+      });
     }
 
     if (!['like', 'pass', 'superlike'].includes(action)) {
-      return res.status(400).json({ message: 'Ação inválida' });
+      return res.status(400).json({ 
+        message: `Ação inválida: "${action}". Ações válidas: like, pass, superlike`,
+        error: 'invalid_action'
+      });
+    }
+    
+    // Recarregar usuário atual para ter dados mais recentes
+    const currentUser = await User.findById(req.user._id);
+    if (!currentUser) {
+      return res.status(404).json({ 
+        message: 'Usuário atual não encontrado',
+        error: 'current_user_not_found'
+      });
+    }
+
+    // Validar formato do targetUserId (deve ser um ObjectId válido)
+    if (typeof targetUserId !== 'string' || !/^[0-9a-fA-F]{24}$/.test(targetUserId)) {
+      return res.status(400).json({ 
+        message: 'ID do usuário alvo inválido. Deve ser um ObjectId válido do MongoDB.',
+        error: 'invalid_target_user_id_format'
+      });
     }
 
     const targetUser = await User.findById(targetUserId);
     if (!targetUser) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      return res.status(404).json({ 
+        message: 'Usuário alvo não encontrado',
+        error: 'target_user_not_found'
+      });
     }
     
     // Verificar se já interagiu com este usuário
